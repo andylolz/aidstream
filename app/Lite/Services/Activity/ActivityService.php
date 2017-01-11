@@ -144,4 +144,28 @@ class ActivityService
             return null;
         }
     }
+
+    public function getActivityStats()
+    {
+        $stats        = ['draft' => 0, 'completed' => 0, 'verified' => 0, 'published' => 0];
+        $activities   = $this->all();
+        $statsMapping = [0 => 'draft', 1 => 'completed', 2 => 'verified', 3 => 'published'];
+
+        foreach ($activities as $activity) {
+            $stats[$statsMapping[$activity->activity_workflow]] = $stats[$statsMapping[$activity->activity_workflow]] + 1;
+        }
+
+        return $stats;
+    }
+
+    public function getBudgetDetails()
+    {
+        $activities = $this->all();
+
+        foreach ($activities as $activity) {
+            $budget = $activity->budget;
+            dump($budget);
+        }
+        dd("asdasd");
+    }
 }

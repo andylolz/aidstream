@@ -10,8 +10,15 @@
         <div id="xml-import-status-placeholder"></div>
         <div class="panel panel-default">
             <div class="panel-content-heading">
-                <div>@lang('lite/title.activities')</div>
+                <div>
+                    @lang('lite/activityDashboard.dashboard')
+                    <span>@lang('lite/activityDashboard.last_published_to_iati'):</span>
+                </div>
             </div>
+            <div>
+                @lang('lite/activityDashboard.find_activities_and_stats')
+            </div>
+            @include('lite.activity.activityStats')
             <div class="panel-body">
                 @if(count($activities) > 0)
                     <table class="table table-striped" id="data-table">
@@ -74,5 +81,11 @@
 @stop
 
 @section('script')
-
+    <script src="{{url('/lite/js/dashboard.js')}}"></script>
+    <script>
+        var data = [{!! implode(",",$stats) !!}];
+        var totalActivities = {!! count($activities) !!}
+                        Dashboard.init(data, totalActivities);
+//                Dashboard.test(data, totalActivities);
+    </script>
 @stop

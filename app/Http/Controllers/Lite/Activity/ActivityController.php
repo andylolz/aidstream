@@ -54,8 +54,10 @@ class ActivityController extends LiteController
     public function index()
     {
         $activities = $this->activityService->all();
+        $stats      = $this->activityService->getActivityStats();
+        $budgetDetails = $this->activityService->getBudgetDetails();
 
-        return view('lite.activity.index', compact('activities', 'form'));
+        return view('lite.activity.index', compact('activities', 'form','stats'));
     }
 
     /**
