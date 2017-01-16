@@ -2,6 +2,7 @@
 
 use App\Lite\Services\Data\V202\Activity\Activity;
 use App\Lite\Services\Data\Traits\TransformsData;
+use App\Lite\Services\ExchangeRate\ExchangeRateService;
 use App\Lite\Services\Traits\ProvidesLoggerContext;
 use Exception;
 use Psr\Log\LoggerInterface;
@@ -26,14 +27,21 @@ class ActivityService
     protected $logger;
 
     /**
+     * @var ExchangeRateService
+     */
+    protected $exchangeRateService;
+
+    /**
      * ActivityService constructor.
      * @param ActivityRepositoryInterface $activityRepository
      * @param LoggerInterface             $logger
+     * @param ExchangeRateService         $exchangeRateService
      */
-    public function __construct(ActivityRepositoryInterface $activityRepository, LoggerInterface $logger)
+    public function __construct(ActivityRepositoryInterface $activityRepository, LoggerInterface $logger, ExchangeRateService $exchangeRateService)
     {
-        $this->activityRepository = $activityRepository;
-        $this->logger             = $logger;
+        $this->activityRepository  = $activityRepository;
+        $this->logger              = $logger;
+        $this->exchangeRateService = $exchangeRateService;
     }
 
     /**
@@ -145,6 +153,11 @@ class ActivityService
         }
     }
 
+    /**
+     * Returns the status of the activity.
+     *
+     * @return array
+     */
     public function getActivityStats()
     {
         $stats        = ['draft' => 0, 'completed' => 0, 'verified' => 0, 'published' => 0];
@@ -158,14 +171,17 @@ class ActivityService
         return $stats;
     }
 
+    /**
+     * Returns budget details of all activities.
+     *
+     * @return array
+     */
     public function getBudgetDetails()
     {
-        $activities = $this->all();
+        $activities    = $this->all();
+        $budgetDetails = $this->exchangeRateService->budgetDetails($activities);
 
-        foreach ($activities as $activity) {
-            $budget = $activity->budget;
-            dump($budget);
-        }
-        dd("asdasd");
+        return $budgetDetails;
     }
 }
+

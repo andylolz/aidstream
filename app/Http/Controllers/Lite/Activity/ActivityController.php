@@ -55,9 +55,10 @@ class ActivityController extends LiteController
     {
         $activities = $this->activityService->all();
         $stats      = $this->activityService->getActivityStats();
-        $budgetDetails = $this->activityService->getBudgetDetails();
 
-        return view('lite.activity.index', compact('activities', 'form','stats'));
+//        $budgetDetails = $this->activityService->getBudgetDetails();
+
+        return view('lite.activity.index', compact('activities', 'form', 'stats'));
     }
 
     /**
@@ -183,6 +184,16 @@ class ActivityController extends LiteController
     {
 //        $activity = $this->activityService->find($activityId);
 //        return view('lite.activity.index', compact('activity'));
+    }
+
+    /**
+     * Returns budget details of all activities through AJAX Request.
+     *
+     * @return array
+     */
+    public function budgetDetails()
+    {
+        return $this->activityService->getBudgetDetails();
     }
 }
 
