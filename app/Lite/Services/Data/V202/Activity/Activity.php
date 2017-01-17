@@ -45,6 +45,21 @@ class Activity implements MapperInterface
     const GENERAL_DESCRIPTION = 1;
 
     /**
+     * Code for outcomes document category.
+     */
+    const OUTCOMES_DOCUMENT_CODE = 'A08';
+
+    /**
+     * Code for annual report document category.
+     */
+    const ANNUAL_REPORT_CODE = 'B01';
+
+    /*
+     * Default Document format,
+     */
+    const DOCUMENT_FORMAT = 'application/pdf';
+
+    /**
      * Raw data holder for Activity entity.
      *
      * @var array
@@ -89,7 +104,9 @@ class Activity implements MapperInterface
         'end_date'                   => 'activity_date',
         'country'                    => 'recipient_country',
         'funding_organisations'      => 'participating_organization',
-        'implementing_organisations' => 'participating_organization'
+        'implementing_organisations' => 'participating_organization',
+        'outcomes_document'          => 'document_link',
+        'annual_report'              => 'document_link'
     ];
 
     /**
@@ -134,7 +151,8 @@ class Activity implements MapperInterface
         $this->reverseMapDescription()
              ->reverseMapActivityDate()
              ->reverseMapRecipientCountry()
-             ->reverseMapParticipatingOrganisation();
+             ->reverseMapParticipatingOrganisation()
+             ->reverseMapDocumentLink();
 
         return $this->mappedData;
     }
@@ -264,11 +282,44 @@ class Activity implements MapperInterface
             $organizationType = getVal($field, ['organisation_type'], '');
             $organizationName = getVal($field, ['organisation_name'], '');
 
-            if ($organizationName != "" && $organizationType != "") {
+            if ($organizationName != "" || $organizationType != "") {
                 $this->mappedData['participating_organization'][$this->index]                              = $template;
                 $this->mappedData['participating_organization'][$this->index]['organization_role']         = $organizationRole;
                 $this->mappedData['participating_organization'][$this->index]['organization_type']         = $organizationType;
                 $this->mappedData['participating_organization'][$this->index]['narrative'][0]['narrative'] = $organizationName;
+                $this->index ++;
+            }
+        }
+    }
+
+    /**
+     * Map the data to document link template.
+     *
+     * @param $key
+     * @param $value
+     * @param $template
+     */
+    protected function document_link($key, $value, $template)
+    {
+        $documentCategory = $this->getDocumentCategory($key);
+
+        foreach ($value as $index => $field) {
+            $documentTitle = getVal($field, ['document_title']);
+            $documentUrl   = getVal($field, ['document_url']);
+            $documentId    = getVal($field, ['document_link_id']);
+            
+            if ($documentTitle != "" || $documentUrl != "" || $documentId != "") {
+                $this->mappedData['document_link'][$this->index] = $template;
+
+                if ($documentId != "") {
+                    $this->mappedData['document_link'][$this->index]['id'] = $documentId;
+                }
+
+                $this->mappedData['document_link'][$this->index]['url']                      = $documentUrl;
+                $this->mappedData['document_link'][$this->index]['title'][0]['narrative'][0] = ['narrative' => $documentTitle, 'language' => ''];
+                $this->mappedData['document_link'][$this->index]['category'][0]['code']      = $documentCategory;
+                $this->mappedData['document_link'][$this->index]['document_date'][0]['date'] = date('Y-m-d');
+                $this->mappedData['document_link'][$this->index]['format']                   = self::DOCUMENT_FORMAT;
                 $this->index ++;
             }
         }
@@ -322,12 +373,12 @@ class Activity implements MapperInterface
 
     /**
      * Reverse map participating organisations for form.
-     * 
+     *
      * @return $this
      */
     protected function reverseMapParticipatingOrganisation()
     {
-        foreach (getVal($this->rawData, ['participating_organization']) as $index => $organization) {
+        foreach (getVal($this->rawData, ['participating_organization'], []) as $index => $organization) {
             $organizationRole = $this->getOrganizationRole(getVal($organization, ['organization_role']), true);
             if (!array_key_exists($organizationRole, $this->mappedData)) {
                 $index = 0;
@@ -336,6 +387,21 @@ class Activity implements MapperInterface
             $organizationName                                                 = getVal($organization, ['narrative', 0, 'narrative']);
             $this->mappedData[$organizationRole][$index]['organisation_name'] = $organizationName;
             $this->mappedData[$organizationRole][$index]['organisation_type'] = $organizationType;
+        }
+
+        return $this;
+    }
+
+    protected function reverseMapDocumentLink()
+    {
+        foreach (getVal($this->rawData, ['document_link'], []) as $index => $documentLink) {
+            $documentCategory = $this->getDocumentCategory(getVal($documentLink, ['document_link', 'category', 0, 'code']), true);
+            if (!array_key_exists($documentCategory, $this->mappedData)) {
+                $index = 0;
+            }
+            $this->mappedData[$documentCategory][$index]['document_title']   = getVal($documentLink, ['document_link', 'title', 0, 'narrative', 0, 'narrative']);
+            $this->mappedData[$documentCategory][$index]['document_url']     = getVal($documentLink, ['document_link', 'url']);
+            $this->mappedData[$documentCategory][$index]['document_link_id'] = getVal($documentLink, ['id']);
         }
 
         return $this;
@@ -405,6 +471,28 @@ class Activity implements MapperInterface
         }
 
         return $description[$key];
+    }
+
+    /**
+     * Returns the document category.
+     * If reversed is true, then key is returned.
+     *
+     * @param      $key
+     * @param bool $reversed
+     * @return mixed|string
+     */
+    protected function getDocumentCategory($key, $reversed = false)
+    {
+        $documentCategory = [
+            'outcomes_document' => self::OUTCOMES_DOCUMENT_CODE,
+            'annual_report'     => self::ANNUAL_REPORT_CODE
+        ];
+
+        if ($reversed) {
+            return getVal(array_flip($documentCategory), [$key]);
+        }
+
+        return $documentCategory[$key];
     }
 
     /**

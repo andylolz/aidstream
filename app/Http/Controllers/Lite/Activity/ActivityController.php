@@ -65,7 +65,7 @@ class ActivityController extends LiteController
      */
     public function create()
     {
-        $form = $this->activityForm->form(route('lite.activity.store'));
+        $form = $this->activityForm->form(route('lite.activity.store'), trans('lite/elementForm.add_this_activity'));
 
         return view('lite.activity.create', compact('form'));
     }
@@ -127,7 +127,7 @@ class ActivityController extends LiteController
     {
         $version  = session('version');
         $activity = $this->activityService->edit($activityId, $version);
-        $form     = $this->activityForm->form(route('lite.activity.update', $activityId), $activity);
+        $form     = $this->activityForm->form(route('lite.activity.update', $activityId), trans('lite/elementForm.update_this_activity'), $activity);
 
         return view('lite.activity.create', compact('form', 'activity'));
     }
@@ -168,7 +168,7 @@ class ActivityController extends LiteController
             return redirect()->route('lite.activity.show', $activityId)->withResponse(['type' => 'danger', 'code' => ['save_failed', ['name' => trans('lite/global.activity')]]]);
         }
 
-        return redirect()->route('lite.activity.show', $activityId)->withResponse(['type' => 'success', 'code' => ['created', ['name' => trans('lite/global.activity')]]]);
+        return redirect()->route('lite.activity.show', $activityId)->withResponse(['type' => 'success', 'code' => ['updated', ['name' => trans('lite/global.activity')]]]);
     }
 
     /**

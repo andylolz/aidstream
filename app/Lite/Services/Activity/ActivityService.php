@@ -1,5 +1,6 @@
 <?php namespace App\Lite\Services\Activity;
 
+use App\Lite\Contracts\DocumentLinkRepositoryInterface;
 use App\Lite\Services\Data\V202\Activity\Activity;
 use App\Lite\Services\Data\Traits\TransformsData;
 use App\Lite\Services\Traits\ProvidesLoggerContext;
@@ -26,14 +27,21 @@ class ActivityService
     protected $logger;
 
     /**
-     * ActivityService constructor.
-     * @param ActivityRepositoryInterface $activityRepository
-     * @param LoggerInterface             $logger
+     * @var DocumentLinkRepositoryInterface
      */
-    public function __construct(ActivityRepositoryInterface $activityRepository, LoggerInterface $logger)
+    protected $documentLinkRepository;
+
+    /**
+     * ActivityService constructor.
+     * @param ActivityRepositoryInterface     $activityRepository
+     * @param DocumentLinkRepositoryInterface $documentLinkRepository
+     * @param LoggerInterface                 $logger
+     */
+    public function __construct(ActivityRepositoryInterface $activityRepository, DocumentLinkRepositoryInterface $documentLinkRepository, LoggerInterface $logger)
     {
-        $this->activityRepository = $activityRepository;
-        $this->logger             = $logger;
+        $this->activityRepository     = $activityRepository;
+        $this->logger                 = $logger;
+        $this->documentLinkRepository = $documentLinkRepository;
     }
 
     /**
@@ -65,7 +73,19 @@ class ActivityService
     public function store(array $rawData, $version)
     {
         try {
-            $activity = $this->activityRepository->save($this->transform($this->getMapping($rawData, 'Activity', $version)));
+            $mappedData   = $this->transform($this->getMapping($rawData, 'Activity', $version));
+            $documentLink = false;
+
+            if (array_key_exists('document_link', $mappedData)) {
+                $documentLink = $mappedData['document_link'];
+                unset($mappedData['document_link']);
+            }
+
+            $activity = $this->activityRepository->save($mappedData);
+
+            if ($documentLink) {
+                $this->documentLinkRepository->save($documentLink, $activity->id);
+            }
 
             $this->logger->info('Activity successfully saved.', $this->getContext());
 
@@ -118,7 +138,12 @@ class ActivityService
      */
     public function edit($activityId, $version)
     {
-        $activity = $this->find($activityId)->toArray();
+        $activity     = $this->find($activityId)->toArray();
+        $documentLink = $this->documentLinkRepository->all($activity['id'])->toArray();
+
+        if ($documentLink) {
+            $activity['document_link'] = $documentLink;
+        }
 
         return $this->transformReverse($this->getMapping($activity, 'Activity', $version));
     }
@@ -134,7 +159,20 @@ class ActivityService
     public function update($activityId, $rawData, $version)
     {
         try {
-            $this->activityRepository->update($activityId, $this->transform($this->getMapping($rawData, 'Activity', $version)));
+            $mappedData   = $this->transform($this->getMapping($rawData, 'Activity', $version));
+            $documentLink = false;
+
+            if (array_key_exists('document_link', $mappedData)) {
+                $documentLink = $mappedData['document_link'];
+                unset($mappedData['document_link']);
+            }
+
+            $this->activityRepository->update($activityId, $mappedData);
+
+            if ($documentLink) {
+                $this->documentLinkRepository->update($documentLink, $activityId);
+            }
+
             $this->logger->info('Activity successfully updated.', $this->getContext());
 
             return true;
