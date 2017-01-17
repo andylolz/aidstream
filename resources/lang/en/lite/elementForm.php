@@ -21,5 +21,6 @@ return [
     'add_another_funding_organisation'      => 'Add another Funding Organisation',
     'add_another_implementing_organisation' => 'Add another Implementing Organisation',
     'select_text'                           => 'Select one of the following options',
-    'add_this_activity'                     => 'Add this activity'
+    'add_this_activity'                     => 'Add this activity',
+    'update_this_activity'                  => 'Update this activity',
 ];
